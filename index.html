@@ -27,8 +27,9 @@
     <script type="module">
         // 1. IMPORT ONLY THE NECESSARY FUNCTIONS (V9 Firebase SDK)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
-        
+        import { getFirestore, collection, addDoc, serverTimestamp,query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+   
         // 2. YOUR FIREBASE CONFIGURATION
         const firebaseConfig = {
             // Replace with your actual values (I've kept your provided data here)
@@ -65,10 +66,64 @@
 
                 feedback.textContent = `Mood logged successfully!`;
                 form.reset();
+                await fetchMoods();
             } catch (e) {
                 feedback.textContent = "Error logging mood: " + e.message;
             }
         });
+        
+        // Function to fetch and display the last 5 mood entries
+        async function fetchMoods() {
+            const list = document.getElementById('moodsList');
+            list.innerHTML = '<li>Loading recent moods...</li>';
+            
+            try {
+                // Construct a query: target 'moods', order by 'timestamp' (newest first), limit to 5
+                const q = query(
+                    collection(db, "moods"), 
+                    orderBy('timestamp', 'desc'), 
+                    limit(5)
+                );
+                
+                const moodsSnapshot = await getDocs(q); // Execute the query
+        
+                list.innerHTML = ''; // Clear loading message
+        
+                if (moodsSnapshot.empty) {
+                    list.innerHTML = '<li>No moods logged yet. Go on, log one!</li>';
+                    return;
+                }
+        
+                moodsSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    // Convert Firestore Timestamp to a readable date string
+                    const time = data.timestamp ? data.timestamp.toDate().toLocaleDateString() + ' ' + data.timestamp.toDate().toLocaleTimeString() : 'No Time';
+                    
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `
+                        <strong>Mood: ${data.mood_score} / 10</strong>
+                        <br>
+                        <em>${data.notes}</em>
+                        <span style="font-size: 0.8em; color: #888;"> (${data.tags || 'No Tags'}) - ${time}</span>
+                    `;
+                    list.appendChild(listItem);
+                });
+        
+            } catch (e) {
+                list.innerHTML = `<li>Error fetching data: ${e.message}</li>`;
+                console.error("Error fetching documents: ", e);
+            }
+        }
+        
+        // Call the display function when the page loads
+        window.onload = fetchMoods;
+
+
+
     </script>
+<hr>
+    <h2>Recent Moods</h2>
+    <ul id="moodsList">
+        </ul>
 </body>
 </html>
