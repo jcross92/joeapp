@@ -1,79 +1,74 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>The JoeApp - Mood Tracker (Firebase)</title>
-                <style>
-        body { font-family: sans-serif; max-width: 400px; margin: 40px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
-        input, textarea, button { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { background-color: #f7a01a; color: white; cursor: pointer; }
-    </style>
+    <title>The JoeApp - Mood Tracker (Firebase)</title>
+    <style>
+        body { font-family: sans-serif; max-width: 400px; margin: 40px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        input, textarea, button { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #f7a01a; color: white; cursor: pointer; }
+    </style>
 </head>
 <body>
-    <h1>JoeApp: Mood Log</h1>
-    <form id="moodForm">
-        <label for="mood_score">Mood (1-10):</label>
-        <input type="number" id="mood_score" min="1" max="10" required>
-        
-        <label for="notes">Notes:</label>
-        <textarea id="notes"></textarea>
-        
-        <label for="tags">Tags:</label>
-        <input type="text" id="tags">
-        
-        <button type="submit">Log It!</button>
-    </form>
-    <p id="feedback"></p>
-    ```
+    <h1>JoeApp: Mood Log</h1>
+    <form id="moodForm">
+        <label for="mood_score">Mood (1-10):</label>
+        <input type="number" id="mood_score" min="1" max="10" required>
+        
+        <label for="notes">Notes:</label>
+        <textarea id="notes"></textarea>
+        
+        <label for="tags">Tags:</label>
+        <input type="text" id="tags">
+        
+        <button type="submit">Log It!</button>
+    </form>
+    <p id="feedback"></p>
 
-### 2. The JavaScript (Module Syntax)
-
-```html
-        <script type="module">
-        // Import only the necessary functions and services using the modern module syntax
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    <script type="module">
+        // 1. IMPORT ONLY THE NECESSARY FUNCTIONS (V9 Firebase SDK)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
-          
-        // Your web app's Firebase configuration (Keep your actual, correct config here)
-        const firebaseConfig = {
-            apiKey: "AIzaSyDeoZvj5eRsvWxyuow-j72byoo52197c5Y",
-            authDomain: "joeapp-v1.firebaseapp.com",
-            projectId: "joeapp-v1",
-            storageBucket: "joeapp-v1.firebasestorage.app",
-            messagingSenderId: "973294244660",
-            appId: "1:973294244660:web:1a8c2302428992bf02cb61",
-            measurementId: "G-5QE4C2DCJX"
-        };
-        
-        // Initialize Firebase using the imported function
-        const app = initializeApp(firebaseConfig); 
-        // Initialize Firestore DB using the imported function
-        const db = getFirestore(app); 
+        
+        // 2. YOUR FIREBASE CONFIGURATION
+        const firebaseConfig = {
+            // Replace with your actual values (I've kept your provided data here)
+            apiKey: "AIzaSyDeoZvj5eRsvWxyuow-j72byoo52197c5Y",
+            authDomain: "joeapp-v1.firebaseapp.com",
+            projectId: "joeapp-v1",
+            storageBucket: "joeapp-v1.firebasestorage.app",
+            messagingSenderId: "973294244660",
+            appId: "1:973294244660:web:1a8c2302428992bf02cb61",
+            measurementId: "G-5QE4C2DCJX"
+        };
+        
+        // 3. INITIALIZE SERVICES
+        const app = initializeApp(firebaseConfig); 
+        const db = getFirestore(app); 
+        
+        // 4. GET DOM ELEMENTS
+        const form = document.getElementById('moodForm');
+        const feedback = document.getElementById('feedback');
 
-        // Remove const analytics = getAnalytics(app); as we aren't using it yet
+        // 5. EVENT LISTENER FOR FORM SUBMISSION
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            feedback.textContent = "Logging data...";
 
-        const form = document.getElementById('moodForm');
-        const feedback = document.getElementById('feedback');
+            try {
+                // Use the modern API structure: addDoc(collection(db, "collectionName"), dataObject)
+                await addDoc(collection(db, "moods"), { 
+                    mood_score: parseInt(form.mood_score.value),
+                    notes: form.notes.value,
+                    tags: form.tags.value,
+                    timestamp: serverTimestamp() 
+                });
 
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            feedback.textContent = "Logging data...";
-
-            try {
-                // Use the imported functions: addDoc() and collection()
-                await addDoc(collection(db, "moods"), { 
-                    mood_score: parseInt(form.mood_score.value),
-                    notes: form.notes.value,
-                    tags: form.tags.value,
-                    // Use the imported function: serverTimestamp()
-                    timestamp: serverTimestamp() 
-                });
-
-                feedback.textContent = `Mood logged successfully!`;
-                form.reset();
-            } catch (e) {
-                feedback.textContent = "Error logging mood: " + e.message;
-            }
-        });
-    </script>
+                feedback.textContent = `Mood logged successfully!`;
+                form.reset();
+            } catch (e) {
+                feedback.textContent = "Error logging mood: " + e.message;
+            }
+        });
+    </script>
 </body>
 </html>
