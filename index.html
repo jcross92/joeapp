@@ -1,38 +1,82 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>The JoeApp</title>
+    <title>The JoeApp - Mood & Lifestyle Tracker</title>
+    <!-- 
+        CSS for aesthetics and mobile responsiveness. 
+        Using Tailwind classes for a modern look, loaded via CDN.
+    -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: sans-serif; max-width: 400px; margin: 40px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
-        input, textarea, button { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { background-color: #f7a01a; color: white; cursor: pointer; }
+        /* Custom styles to enhance the aesthetic */
+        body { font-family: 'Inter', sans-serif; background-color: #f7f7f7; }
+        .card { 
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e0e0e0; 
+        }
+        .form-input { border-radius: 6px; }
+        .mood-item { border-bottom: 1px dashed #e5e5e5; }
+        .mood-score-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 9999px; /* Fully rounded */
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
     </style>
 </head>
-<body>
-    <h1>JoeApp: Mood Log</h1>
-    <form id="moodForm">
-        <label for="mood_score">How are you feeling!? Mood (1-10):</label>
-        <input type="number" id="mood_score" min="1" max="10" required>
-        
-        <label for="notes">Notes:</label>
-        <textarea id="notes"></textarea>
-        
-        <label for="tags">Tags:</label>
-        <input type="text" id="tags">
-        
-        <button type="submit">Log It!</button>
-    </form>
-    <p id="feedback"></p>
+<body class="p-4 sm:p-8">
+    <div class="max-w-md mx-auto">
+        <div class="card bg-white p-6 rounded-lg">
+            <h1 class="text-3xl font-bold text-orange-600 border-b-2 border-orange-300 pb-3 mb-6">
+                JoeApp: Log Your Day
+            </h1>
+            
+            <p class="text-sm text-gray-500 mb-4">
+                Powered by Firebase (Database), GitHub (Code), and Netlify (Hosting).
+            </p>
 
+            <form id="moodForm">
+                <!-- 8. DATE PICKER INTEGRATION -->
+                <label for="entry_date" class="block text-sm font-medium text-gray-700 mb-1">Date:</label>
+                <input type="date" id="entry_date" name="entry_date" required class="form-input mb-4 w-full p-2 border">
+
+                <label for="mood_score" class="block text-sm font-medium text-gray-700 mb-1">Mood (1-10):</label>
+                <input type="number" id="mood_score" min="1" max="10" required class="form-input mb-4 w-full p-2 border">
+                
+                <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notes:</label>
+                <textarea id="notes" rows="3" class="form-input mb-4 w-full p-2 border"></textarea>
+                
+                <label for="tags" class="block text-sm font-medium text-gray-700 mb-1">Tags (e.g., Work, Cricket, Durham):</label>
+                <input type="text" id="tags" class="form-input mb-6 w-full p-2 border">
+                
+                <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-lg transition duration-150 ease-in-out">
+                    Log It!
+                </button>
+            </form>
+            <p id="feedback" class="font-medium text-center mt-3"></p>
+
+            <!-- 6. DATA VISUALIZATION CONTAINER -->
+            <hr class="my-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Recent Moods (Last 5)</h2>
+            <ul id="moodsList" class="space-y-3">
+                <li class="text-gray-500">Loading mood entries...</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- THE JAVASCRIPT LOGIC -->
     <script type="module">
-        // 1. IMPORT ONLY THE NECESSARY FUNCTIONS (V9 Firebase SDK)
+        // --- FIREBASE IMPORTS ---
+        // V9 Module syntax: loads only the required functions
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp,query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
-
-   
-        // 2. YOUR FIREBASE CONFIGURATION
+        import { 
+            getFirestore, collection, addDoc, serverTimestamp, 
+            query, orderBy, limit, getDocs 
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+        
+        // 2. YOUR FIREBASE CONFIGURATION - THIS MUST BE REPLACED WITH YOUR ACTUAL KEYS!
         const firebaseConfig = {
-            // Replace with your actual values (I've kept your provided data here)
             apiKey: "AIzaSyDeoZvj5eRsvWxyuow-j72byoo52197c5Y",
             authDomain: "joeapp-v1.firebaseapp.com",
             projectId: "joeapp-v1",
@@ -49,81 +93,132 @@
         // 4. GET DOM ELEMENTS
         const form = document.getElementById('moodForm');
         const feedback = document.getElementById('feedback');
+        const list = document.getElementById('moodsList');
 
-        // 5. EVENT LISTENER FOR FORM SUBMISSION
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            feedback.textContent = "Logging data...";
 
-            try {
-                // Use the modern API structure: addDoc(collection(db, "collectionName"), dataObject)
-                await addDoc(collection(db, "moods"), { 
-                    mood_score: parseInt(form.mood_score.value),
-                    notes: form.notes.value,
-                    tags: form.tags.value,
-                    timestamp: serverTimestamp() 
-                });
+        // ==========================================================
+        // FEATURE: DEFAULT DATE
+        // ==========================================================
 
-                feedback.textContent = `Mood logged successfully!`;
-                form.reset();
-                await fetchMoods();
-            } catch (e) {
-                feedback.textContent = "Error logging mood: " + e.message;
-            }
-        });
+        /** Sets the date input field to today's date (YYYY-MM-DD format). */
+        function setDefaultDate() {
+            const dateInput = document.getElementById('entry_date');
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            // JavaScript months are 0-indexed, so add 1 and pad with 0
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); 
+            const dd = String(today.getDate()).padStart(2, '0');
+            dateInput.value = `${yyyy}-${mm}-${dd}`;
+        }
         
-        // Function to fetch and display the last 5 mood entries
+        // Call this immediately on script load
+        setDefaultDate(); 
+
+        // ==========================================================
+        // FEATURE: DATA VISUALIZATION (READ)
+        // ==========================================================
+
+        /** Fetches and displays the last 5 mood entries from Firestore. */
         async function fetchMoods() {
-            const list = document.getElementById('moodsList');
-            list.innerHTML = '<li>Loading recent moods...</li>';
+            list.innerHTML = '<li class="text-gray-400">Loading recent moods...</li>';
             
             try {
-                // Construct a query: target 'moods', order by 'timestamp' (newest first), limit to 5
+                // Construct query: target 'moods', order by submission time (newest first), limit to 5
                 const q = query(
                     collection(db, "moods"), 
                     orderBy('timestamp', 'desc'), 
                     limit(5)
                 );
                 
-                const moodsSnapshot = await getDocs(q); // Execute the query
-        
+                const moodsSnapshot = await getDocs(q); 
+
                 list.innerHTML = ''; // Clear loading message
-        
+
                 if (moodsSnapshot.empty) {
-                    list.innerHTML = '<li>No moods logged yet. Go on, log one!</li>';
+                    list.innerHTML = '<li class="text-gray-500">No moods logged yet.</li>';
                     return;
                 }
-        
+
                 moodsSnapshot.forEach(doc => {
                     const data = doc.data();
-                    // Convert Firestore Timestamp to a readable date string
-                    const time = data.timestamp ? data.timestamp.toDate().toLocaleDateString() + ' ' + data.timestamp.toDate().toLocaleTimeString() : 'No Time';
                     
+                    // Display the user-selected date
+                    const entryTime = data.entry_date 
+                        ? data.entry_date.toDate().toLocaleDateString('en-GB') // Use GB format for clarity
+                        : data.timestamp.toDate().toLocaleDateString('en-GB');
+                    
+                    // Determine color based on mood score (simple visualization)
+                    let colorClass;
+                    if (data.mood_score >= 8) {
+                        colorClass = 'bg-green-500 text-white'; // Happy
+                    } else if (data.mood_score >= 5) {
+                        colorClass = 'bg-yellow-400 text-gray-800'; // Neutral
+                    } else {
+                        colorClass = 'bg-red-500 text-white'; // Low
+                    }
+
                     const listItem = document.createElement('li');
+                    listItem.className = 'mood-item p-3 rounded-md flex justify-between items-start';
                     listItem.innerHTML = `
-                        <strong>Mood: ${data.mood_score} / 10</strong>
-                        <br>
-                        <em>${data.notes}</em>
-                        <span style="font-size: 0.8em; color: #888;"> (${data.tags || 'No Tags'}) - ${time}</span>
+                        <div>
+                            <div class="text-xs text-gray-400">${entryTime}</div>
+                            <div class="text-gray-900 mt-1">${data.notes}</div>
+                            <div class="text-sm text-gray-500 italic">${data.tags || 'No Tags'}</div>
+                        </div>
+                        <div class="mood-score-tag ${colorClass} min-w-10 text-center ml-2">
+                            ${data.mood_score}
+                        </div>
                     `;
                     list.appendChild(listItem);
                 });
-        
+
             } catch (e) {
-                list.innerHTML = `<li>Error fetching data: ${e.message}</li>`;
+                list.innerHTML = `<li class="text-red-500">Error fetching data: ${e.message}</li>`;
                 console.error("Error fetching documents: ", e);
             }
         }
         
-        // Call the display function when the page loads
+        // Initial load of moods
         window.onload = fetchMoods;
 
 
+        // ==========================================================
+        // FEATURE: DATA LOGGING (WRITE)
+        // ==========================================================
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            feedback.textContent = "Logging data...";
+            feedback.classList.remove('text-red-500', 'text-green-500');
+
+            try {
+                const selectedDateString = document.getElementById('entry_date').value;
+
+                // Use the modern API structure to write data
+                await addDoc(collection(db, "moods"), { 
+                    entry_date: new Date(selectedDateString), // User-selected date
+                    mood_score: parseInt(form.mood_score.value),
+                    notes: form.notes.value,
+                    tags: form.tags.value,
+                    timestamp: serverTimestamp() // Time of submission
+                });
+
+                feedback.textContent = `Mood logged successfully!`;
+                feedback.classList.add('text-green-500');
+
+                // Clean up
+                form.reset();
+                setDefaultDate(); 
+                await fetchMoods(); // Refresh the list instantly
+                
+            } catch (e) {
+                feedback.textContent = "Error logging mood. Check console and security rules.";
+                feedback.classList.add('text-red-500');
+                console.error("Error adding document: ", e);
+            }
+        });
 
     </script>
-<hr>
-    <h2>Recent Moods</h2>
-    <ul id="moodsList">
-        </ul>
 </body>
 </html>
+
