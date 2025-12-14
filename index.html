@@ -2,10 +2,7 @@
 <html>
 <head>
     <title>The JoeApp</title>
-    <!-- 
-        CSS for aesthetics and mobile responsiveness. 
-        Using Tailwind classes for a modern look, loaded via CDN.
-    -->
+    <!-- CSS is kept here for quick loading -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Custom styles to enhance the aesthetic */
@@ -23,21 +20,31 @@
             font-weight: bold;
             font-size: 0.85rem;
         }
+        .delete-btn {
+            color: #ef4444; /* red-500 */
+            font-weight: bold;
+            line-height: 1;
+            cursor: pointer;
+            transition: color 0.15s ease-in-out;
+            padding: 2px 5px; /* Added padding to make it a better touch target */
+        }
+        .delete-btn:hover {
+            color: #b91c1c; /* red-700 */
+        }
     </style>
 </head>
 <body class="p-4 sm:p-8">
     <div class="max-w-md mx-auto">
         <div class="card bg-white p-6 rounded-lg">
-            <h1 class="text-3xl font-bold text-orange-600 border-b-2 border-orange-300 pb-3 mb-6">
-                JoeApp: Log Your Day
+            <h1 class="text-3xl font-bold text-emerald-700 border-b-2 border-emerald-300 pb-3 mb-6">
+                JoeApp: Mood Tracker
             </h1>
             
             <p class="text-sm text-gray-500 mb-4">
-                Powered by Firebase (Database), GitHub (Code), and Netlify (Hosting).
+                Getting my head around what the hell AI is.
             </p>
 
             <form id="moodForm">
-                <!-- 8. DATE PICKER INTEGRATION -->
                 <label for="entry_date" class="block text-sm font-medium text-gray-700 mb-1">Date:</label>
                 <input type="date" id="entry_date" name="entry_date" required class="form-input mb-4 w-full p-2 border">
 
@@ -47,16 +54,16 @@
                 <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notes:</label>
                 <textarea id="notes" rows="3" class="form-input mb-4 w-full p-2 border"></textarea>
                 
-                <label for="tags" class="block text-sm font-medium text-gray-700 mb-1">Tags (e.g., Work, Cricket, Durham):</label>
+                <label for="tags" class="block text-sm font-medium text-gray-700 mb-1">Tags (e.g., Work, Family, Fun etc.):</label>
                 <input type="text" id="tags" class="form-input mb-6 w-full p-2 border">
                 
-                <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-lg transition duration-150 ease-in-out">
+                <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white p-3 rounded-lg transition duration-150 ease-in-out">
                     Log It!
                 </button>
             </form>
             <p id="feedback" class="font-medium text-center mt-3"></p>
 
-            <!-- 6. DATA VISUALIZATION CONTAINER -->
+            <!-- DATA VISUALIZATION CONTAINER -->
             <hr class="my-6">
             <h2 class="text-xl font-semibold text-gray-800 mb-4">Recent Moods (Last 5)</h2>
             <ul id="moodsList" class="space-y-3">
@@ -67,15 +74,16 @@
 
     <!-- THE JAVASCRIPT LOGIC -->
     <script type="module">
-        // --- FIREBASE IMPORTS ---
-        // V9 Module syntax: loads only the required functions
+        // --- FIREBASE IMPORTS (UPDATED) ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { 
             getFirestore, collection, addDoc, serverTimestamp, 
-            query, orderBy, limit, getDocs 
+            query, orderBy, limit, getDocs, 
+            // NEW IMPORTS FOR DELETION
+            deleteDoc, doc 
         } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
         
-        // 2. YOUR FIREBASE CONFIGURATION - THIS MUST BE REPLACED WITH YOUR ACTUAL KEYS!
+        // 2. YOUR FIREBASE CONFIGURATION - (Ensure your actual keys are here)
         const firebaseConfig = {
             apiKey: "AIzaSyDeoZvj5eRsvWxyuow-j72byoo52197c5Y",
             authDomain: "joeapp-v1.firebaseapp.com",
@@ -97,7 +105,7 @@
 
 
         // ==========================================================
-        // FEATURE: DEFAULT DATE
+        // FEATURE: DEFAULT DATE & LOGGING
         // ==========================================================
 
         /** Sets the date input field to today's date (YYYY-MM-DD format). */
@@ -105,14 +113,39 @@
             const dateInput = document.getElementById('entry_date');
             const today = new Date();
             const yyyy = today.getFullYear();
-            // JavaScript months are 0-indexed, so add 1 and pad with 0
             const mm = String(today.getMonth() + 1).padStart(2, '0'); 
             const dd = String(today.getDate()).padStart(2, '0');
             dateInput.value = `${yyyy}-${mm}-${dd}`;
         }
         
-        // Call this immediately on script load
         setDefaultDate(); 
+
+
+        // ==========================================================
+        // NEW FEATURE: DELETE LOGIC
+        // ==========================================================
+
+        /** Deletes a document from Firestore using its ID. */
+        window.deleteMood = async function(docId) {
+            // Confirming the user really wants to delete it (as we can't use alert/confirm)
+            if (!confirm(`Are you sure you want to delete this mood entry? ID: ${docId.substring(0, 5)}...`)) {
+                return;
+            }
+
+            try {
+                // Delete the document reference: doc(database, collectionName, documentId)
+                await deleteDoc(doc(db, "moods", docId));
+                feedback.textContent = "Entry deleted successfully!";
+                feedback.classList.remove('text-green-500', 'text-red-500');
+                feedback.classList.add('text-red-500'); 
+                await fetchMoods(); // Refresh the list
+            } catch (e) {
+                feedback.textContent = "Error deleting entry. Check security rules.";
+                feedback.classList.add('text-red-500');
+                console.error("Error deleting document: ", e);
+            }
+        }
+
 
         // ==========================================================
         // FEATURE: DATA VISUALIZATION (READ)
@@ -123,7 +156,6 @@
             list.innerHTML = '<li class="text-gray-400">Loading recent moods...</li>';
             
             try {
-                // Construct query: target 'moods', order by submission time (newest first), limit to 5
                 const q = query(
                     collection(db, "moods"), 
                     orderBy('timestamp', 'desc'), 
@@ -131,8 +163,7 @@
                 );
                 
                 const moodsSnapshot = await getDocs(q); 
-
-                list.innerHTML = ''; // Clear loading message
+                list.innerHTML = ''; 
 
                 if (moodsSnapshot.empty) {
                     list.innerHTML = '<li class="text-gray-500">No moods logged yet.</li>';
@@ -142,31 +173,38 @@
                 moodsSnapshot.forEach(doc => {
                     const data = doc.data();
                     
-                    // Display the user-selected date
+                    // Determine which timestamp to display
                     const entryTime = data.entry_date 
-                        ? data.entry_date.toDate().toLocaleDateString('en-GB') // Use GB format for clarity
+                        ? data.entry_date.toDate().toLocaleDateString('en-GB') 
                         : data.timestamp.toDate().toLocaleDateString('en-GB');
                     
-                    // Determine color based on mood score (simple visualization)
+                    // Simple mood coloring logic
                     let colorClass;
                     if (data.mood_score >= 8) {
-                        colorClass = 'bg-green-500 text-white'; // Happy
+                        colorClass = 'bg-emerald-600 text-white'; // Reworked for Dark Green Accents
                     } else if (data.mood_score >= 5) {
-                        colorClass = 'bg-yellow-400 text-gray-800'; // Neutral
+                        colorClass = 'bg-yellow-400 text-gray-800';
                     } else {
-                        colorClass = 'bg-red-500 text-white'; // Low
+                        colorClass = 'bg-red-500 text-white';
                     }
 
                     const listItem = document.createElement('li');
                     listItem.className = 'mood-item p-3 rounded-md flex justify-between items-start';
                     listItem.innerHTML = `
-                        <div>
+                        <div class="flex-grow">
                             <div class="text-xs text-gray-400">${entryTime}</div>
                             <div class="text-gray-900 mt-1">${data.notes}</div>
                             <div class="text-sm text-gray-500 italic">${data.tags || 'No Tags'}</div>
                         </div>
-                        <div class="mood-score-tag ${colorClass} min-w-10 text-center ml-2">
-                            ${data.mood_score}
+                        <div class="flex items-center space-x-2">
+                            <!-- Mood Score Tag -->
+                            <div class="mood-score-tag ${colorClass} min-w-10 text-center">
+                                ${data.mood_score}
+                            </div>
+                            <!-- Delete Button (The 'x') -->
+                            <button class="delete-btn" onclick="window.deleteMood('${doc.id}')" title="Delete Entry">
+                                &times; 
+                            </button>
                         </div>
                     `;
                     list.appendChild(listItem);
@@ -178,7 +216,6 @@
             }
         }
         
-        // Initial load of moods
         window.onload = fetchMoods;
 
 
@@ -194,22 +231,20 @@
             try {
                 const selectedDateString = document.getElementById('entry_date').value;
 
-                // Use the modern API structure to write data
                 await addDoc(collection(db, "moods"), { 
-                    entry_date: new Date(selectedDateString), // User-selected date
+                    entry_date: new Date(selectedDateString),
                     mood_score: parseInt(form.mood_score.value),
                     notes: form.notes.value,
                     tags: form.tags.value,
-                    timestamp: serverTimestamp() // Time of submission
+                    timestamp: serverTimestamp()
                 });
 
                 feedback.textContent = `Mood logged successfully!`;
-                feedback.classList.add('text-green-500');
+                feedback.classList.add('text-emerald-600'); // Changed to Emerald Green Success message
 
-                // Clean up
                 form.reset();
                 setDefaultDate(); 
-                await fetchMoods(); // Refresh the list instantly
+                await fetchMoods(); 
                 
             } catch (e) {
                 feedback.textContent = "Error logging mood. Check console and security rules.";
@@ -217,7 +252,6 @@
                 console.error("Error adding document: ", e);
             }
         });
-
     </script>
 </body>
 </html>
