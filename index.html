@@ -31,6 +31,20 @@
         .delete-btn:hover {
             color: #b91c1c; /* red-700 */
         }
+        .google-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #4285F4; /* Google Blue */
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: background-color 0.15s;
+        }
+        .google-btn:hover {
+            background-color: #357ae8;
+        }
     </style>
 </head>
 <body class="p-4 sm:p-8">
@@ -44,46 +58,73 @@
                 Getting my head around what the hell AI is.
             </p>
 
-            <form id="moodForm">
-                <label for="entry_date" class="block text-sm font-medium text-gray-700 mb-1">Date:</label>
-                <input type="date" id="entry_date" name="entry_date" required class="form-input mb-4 w-full p-2 border">
-
-                <label for="mood_score" class="block text-sm font-medium text-gray-700 mb-1">Mood (1-10):</label>
-                <input type="number" id="mood_score" min="1" max="10" required class="form-input mb-4 w-full p-2 border">
+            <!-- AUTH STATUS & LOGIN FORM -->
+            <div id="authStatus" class="text-center font-medium mb-4">Checking login status...</div>
+            
+            <div id="loginContainer" class="space-y-4 p-4 border rounded-lg bg-gray-50" style="display:none;">
+                <h2 class="text-xl font-semibold text-gray-700 text-center mb-4">Sign In</h2>
                 
-                <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notes:</label>
-                <textarea id="notes" rows="3" class="form-input mb-4 w-full p-2 border"></textarea>
-                
-                <label for="tags" class="block text-sm font-medium text-gray-700 mb-1">Tags (e.g., Work, Family, Fun etc.):</label>
-                <input type="text" id="tags" class="form-input mb-6 w-full p-2 border">
-                
-                <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white p-3 rounded-lg transition duration-150 ease-in-out">
-                    Log It!
+                <!-- GOOGLE SIGN-IN BUTTON -->
+                <button id="googleLoginButton" class="google-btn w-full">
+                    <!-- Google Icon SVG for aesthetics -->
+                    <svg class="w-5 h-5 mr-3" viewBox="0 0 48 48">
+                        <path fill="#EA4335" d="M24 9.5c3.27 0 5.83 1.15 7.6 3.25l6.3-5.3c-4.4-4-10.3-6.4-15.9-6.4-9.3 0-17.1 5.4-20.8 13.5l6.4 5c3.5-7.1 10.9-12.1 17.4-12.1z"/>
+                        <path fill="#4285F4" d="M43.7 24.5c0-.9-.1-1.7-.3-2.5H24v4.7h11.8c-.6 2.9-2.3 5.4-4.8 7l6.3 5c3.9-3.7 6.2-9.2 6.2-15.3z"/>
+                        <path fill="#FBBC05" d="M6.3 29.5l-6.4 5c3.7 8.1 11.5 13.5 20.8 13.5 5.6 0 11.4-2.4 15.9-6.4l-6.3-5.3c-1.8 2.1-4.4 3.2-7.6 3.2-6.5 0-13.9-5-17.4-12.1z"/>
+                        <path fill="#34A853" d="M43.7 24c0-2.5-.5-5-1.4-7.3l-6.3 5.3c.7 2.1 1.1 4.5 1.1 7 0 5.5-2.8 10.3-7.2 13.1l6.3 5c4.7-4.4 7.6-10.7 7.6-17.6z"/>
+                    </svg>
+                    Sign In with Google
                 </button>
-            </form>
-            <p id="feedback" class="font-medium text-center mt-3"></p>
+            </div>
+            
+            <!-- MAIN APP CONTENT (HIDDEN BY DEFAULT) -->
+            <div id="appContent" style="display:none;">
+                <form id="moodForm" class="mt-6">
+                    <label for="entry_date" class="block text-sm font-medium text-gray-700 mb-1">Date:</label>
+                    <input type="date" id="entry_date" name="entry_date" required class="form-input w-full p-2 border">
 
-            <!-- DATA VISUALIZATION CONTAINER -->
-            <hr class="my-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Recent Moods (Last 5)</h2>
-            <ul id="moodsList" class="space-y-3">
-                <li class="text-gray-500">Loading mood entries...</li>
-            </ul>
+                    <label for="mood_score" class="block text-sm font-medium text-gray-700 mb-1">Mood (1-10):</label>
+                    <input type="number" id="mood_score" min="1" max="10" required class="form-input mb-4 w-full p-2 border">
+                    
+                    <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notes:</label>
+                    <textarea id="notes" rows="3" class="form-input mb-4 w-full p-2 border"></textarea>
+                    
+                    <label for="tags" class="block text-sm font-medium text-gray-700 mb-1">Tags (e.g., Work, Family, Fun etc.):</label>
+                    <input type="text" id="tags" class="form-input mb-6 w-full p-2 border">
+                    
+                    <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white p-3 rounded-lg transition duration-150 ease-in-out">
+                        Log It!
+                    </button>
+                </form>
+                <p id="feedback" class="font-medium text-center mt-3"></p>
+
+                <!-- DATA VISUALIZATION CONTAINER -->
+                <hr class="my-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Recent Moods (Last 5)</h2>
+                <ul id="moodsList" class="space-y-3">
+                    <li class="text-gray-500">Log in to see entries.</li>
+                </ul>
+            </div>
         </div>
     </div>
 
     <!-- THE JAVASCRIPT LOGIC -->
     <script type="module">
-        // --- FIREBASE IMPORTS (UPDATED) ---
+        // --- FIREBASE IMPORTS ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { 
             getFirestore, collection, addDoc, serverTimestamp, 
             query, orderBy, limit, getDocs, 
-            // NEW IMPORTS FOR DELETION
             deleteDoc, doc 
         } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+        // AUTH IMPORTS (NEW: GoogleAuthProvider, signInWithPopup)
+        import { 
+            getAuth, signOut, onAuthStateChanged, 
+            setPersistence, browserLocalPersistence,
+            GoogleAuthProvider, signInWithPopup 
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
         
-        // 2. YOUR FIREBASE CONFIGURATION - (Ensure your actual keys are here)
+        // 2. YOUR FIREBASE CONFIGURATION 
         const firebaseConfig = {
             apiKey: "AIzaSyDeoZvj5eRsvWxyuow-j72byoo52197c5Y",
             authDomain: "joeapp-v1.firebaseapp.com",
@@ -97,48 +138,113 @@
         // 3. INITIALIZE SERVICES
         const app = initializeApp(firebaseConfig); 
         const db = getFirestore(app); 
+        const auth = getAuth(app); 
         
         // 4. GET DOM ELEMENTS
         const form = document.getElementById('moodForm');
         const feedback = document.getElementById('feedback');
         const list = document.getElementById('moodsList');
+        const appContent = document.getElementById('appContent');
+        const loginContainer = document.getElementById('loginContainer');
+        const authStatus = document.getElementById('authStatus');
+        const googleLoginButton = document.getElementById('googleLoginButton'); // Renamed
 
 
         // ==========================================================
-        // FEATURE: DEFAULT DATE & LOGGING
+        // FEATURE: DEFAULT DATE
         // ==========================================================
 
         /** Sets the date input field to today's date (YYYY-MM-DD format). */
         function setDefaultDate() {
             const dateInput = document.getElementById('entry_date');
-            const today = new Date();
-            const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0'); 
-            const dd = String(today.getDate()).padStart(2, '0');
-            dateInput.value = `${yyyy}-${mm}-${dd}`;
+            if (dateInput) {
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0'); 
+                const dd = String(today.getDate()).padStart(2, '0');
+                dateInput.value = `${yyyy}-${mm}-${dd}`;
+            }
         }
         
         setDefaultDate(); 
 
 
         // ==========================================================
-        // NEW FEATURE: DELETE LOGIC
+        // AUTHENTICATION LOGIC (PERSISTENT GOOGLE LOGIN)
+        // ==========================================================
+        
+        // 1. Initialize Google Provider
+        const googleProvider = new GoogleAuthProvider();
+
+        // 2. Handle Google Login button click
+        googleLoginButton.addEventListener('click', async () => {
+            authStatus.textContent = "Redirecting to Google...";
+            authStatus.classList.remove('text-red-500', 'text-emerald-600');
+            
+            try {
+                // Set persistence before attempting sign-in
+                await setPersistence(auth, browserLocalPersistence); 
+
+                // Sign in using a pop-up window
+                await signInWithPopup(auth, googleProvider);
+                
+                // onAuthStateChanged handler will take over on success
+            } catch (error) {
+                authStatus.textContent = `Login failed: ${error.message}`;
+                authStatus.classList.add('text-red-500');
+            }
+        });
+
+        // Handle sign out
+        window.logout = () => signOut(auth);
+
+        // Core UI State Manager: Runs whenever auth state changes
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // USER IS LOGGED IN
+                
+                // Display user's name if available (from Google profile)
+                const userName = user.displayName ? user.displayName.split(' ')[0] : 'Joe';
+
+                authStatus.innerHTML = `Welcome back, ${userName}! <button onclick="window.logout()" class="text-sm text-red-500 hover:text-red-700 ml-2">Logout</button>`;
+                authStatus.classList.add('text-emerald-600');
+                loginContainer.style.display = 'none';
+                appContent.style.display = 'block';
+                
+                // Load user-specific data
+                fetchMoods(user.uid); 
+                
+            } else {
+                // USER IS SIGNED OUT OR HAS NEVER LOGGED IN
+                authStatus.textContent = "Sign in to access your mood tracker.";
+                authStatus.classList.remove('text-emerald-600');
+                loginContainer.style.display = 'block';
+                appContent.style.display = 'none';
+                list.innerHTML = '<li class="text-gray-500">Sign in to view your secure data.</li>';
+            }
+        });
+
+
+        // ==========================================================
+        // USER-SPECIFIC DATA LOGIC
         // ==========================================================
 
         /** Deletes a document from Firestore using its ID. */
         window.deleteMood = async function(docId) {
-            // Confirming the user really wants to delete it (as we can't use alert/confirm)
-            if (!confirm(`Are you sure you want to delete this mood entry? ID: ${docId.substring(0, 5)}...`)) {
+            const user = auth.currentUser;
+            if (!user) return; // Should not happen if UI is correctly hidden
+
+            if (!confirm(`Are you sure you want to delete this entry? ID: ${docId.substring(0, 5)}...`)) {
                 return;
             }
 
             try {
-                // Delete the document reference: doc(database, collectionName, documentId)
-                await deleteDoc(doc(db, "moods", docId));
+                // SECURE PATH: users/{userId}/moods/{moodId}
+                await deleteDoc(doc(db, "users", user.uid, "moods", docId));
                 feedback.textContent = "Entry deleted successfully!";
-                feedback.classList.remove('text-green-500', 'text-red-500');
+                feedback.classList.remove('text-emerald-600');
                 feedback.classList.add('text-red-500'); 
-                await fetchMoods(); // Refresh the list
+                await fetchMoods(user.uid); 
             } catch (e) {
                 feedback.textContent = "Error deleting entry. Check security rules.";
                 feedback.classList.add('text-red-500');
@@ -146,18 +252,14 @@
             }
         }
 
-
-        // ==========================================================
-        // FEATURE: DATA VISUALIZATION (READ)
-        // ==========================================================
-
-        /** Fetches and displays the last 5 mood entries from Firestore. */
-        async function fetchMoods() {
+        /** Fetches and displays the last 5 mood entries for the current user. */
+        async function fetchMoods(uid) {
             list.innerHTML = '<li class="text-gray-400">Loading recent moods...</li>';
             
             try {
+                // SECURE PATH: target collection(db, "users", uid, "moods")
                 const q = query(
-                    collection(db, "moods"), 
+                    collection(db, "users", uid, "moods"), 
                     orderBy('timestamp', 'desc'), 
                     limit(5)
                 );
@@ -173,7 +275,6 @@
                 moodsSnapshot.forEach(doc => {
                     const data = doc.data();
                     
-                    // Determine which timestamp to display
                     const entryTime = data.entry_date 
                         ? data.entry_date.toDate().toLocaleDateString('en-GB') 
                         : data.timestamp.toDate().toLocaleDateString('en-GB');
@@ -181,7 +282,7 @@
                     // Simple mood coloring logic
                     let colorClass;
                     if (data.mood_score >= 8) {
-                        colorClass = 'bg-emerald-600 text-white'; // Reworked for Dark Green Accents
+                        colorClass = 'bg-emerald-600 text-white';
                     } else if (data.mood_score >= 5) {
                         colorClass = 'bg-yellow-400 text-gray-800';
                     } else {
@@ -197,11 +298,9 @@
                             <div class="text-sm text-gray-500 italic">${data.tags || 'No Tags'}</div>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <!-- Mood Score Tag -->
                             <div class="mood-score-tag ${colorClass} min-w-10 text-center">
                                 ${data.mood_score}
                             </div>
-                            <!-- Delete Button (The 'x') -->
                             <button class="delete-btn" onclick="window.deleteMood('${doc.id}')" title="Delete Entry">
                                 &times; 
                             </button>
@@ -211,27 +310,32 @@
                 });
 
             } catch (e) {
-                list.innerHTML = `<li class="text-red-500">Error fetching data: ${e.message}</li>`;
+                list.innerHTML = `<li class="text-red-500">Error fetching data. Check security rules and console.</li>`;
                 console.error("Error fetching documents: ", e);
             }
         }
         
-        window.onload = fetchMoods;
-
-
         // ==========================================================
         // FEATURE: DATA LOGGING (WRITE)
         // ==========================================================
 
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
+            const user = auth.currentUser;
+            if (!user) {
+                feedback.textContent = "Error: Authentication required. Please log in.";
+                feedback.classList.add('text-red-500');
+                return;
+            }
+
             feedback.textContent = "Logging data...";
-            feedback.classList.remove('text-red-500', 'text-green-500');
+            feedback.classList.remove('text-red-500', 'text-emerald-600');
 
             try {
                 const selectedDateString = document.getElementById('entry_date').value;
 
-                await addDoc(collection(db, "moods"), { 
+                // SECURE PATH: Use the user's UID for the collection path
+                await addDoc(collection(db, "users", user.uid, "moods"), { 
                     entry_date: new Date(selectedDateString),
                     mood_score: parseInt(form.mood_score.value),
                     notes: form.notes.value,
@@ -240,14 +344,14 @@
                 });
 
                 feedback.textContent = `Mood logged successfully!`;
-                feedback.classList.add('text-emerald-600'); // Changed to Emerald Green Success message
+                feedback.classList.add('text-emerald-600'); 
 
                 form.reset();
                 setDefaultDate(); 
-                await fetchMoods(); 
+                await fetchMoods(user.uid); 
                 
             } catch (e) {
-                feedback.textContent = "Error logging mood. Check console and security rules.";
+                feedback.textContent = "Error logging mood. Check console.";
                 feedback.classList.add('text-red-500');
                 console.error("Error adding document: ", e);
             }
@@ -255,4 +359,3 @@
     </script>
 </body>
 </html>
-
